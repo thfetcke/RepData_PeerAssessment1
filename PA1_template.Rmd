@@ -1,5 +1,6 @@
 ---
 title: "Reproducible Research: Peer Assessment 1"
+author: Thomas Fetcke
 output: 
   html_document:
     keep_md: true
@@ -7,12 +8,30 @@ output:
 
 
 ## Loading and preprocessing the data
-
-
+```{r}
+library(dplyr,warn.conflicts=FALSE)
+library(lubridate)
+dataFile="activity.csv"
+if (!file.exists(dataFile))
+    unzip("activity.zip")
+activity <- tbl_df(read.csv(dataFile))
+```
 
 ## What is mean total number of steps taken per day?
 
+```{r}
+steps_by_day <- activity %>% 
+    filter(!is.na(steps)) %>% 
+    group_by(date) %>% 
+    summarise(total=sum(steps))
+with(steps_by_day, hist(total,breaks=23))
+```
 
+```{r}
+daily_avg <- steps_by_day %>% 
+    summarise(mean=mean(total), median=median(total))
+daily_avg
+```
 
 ## What is the average daily activity pattern?
 
