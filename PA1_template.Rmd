@@ -17,13 +17,12 @@ if (!file.exists(dataFile))
 activity <- tbl_df(read.csv(dataFile))
 ```
 
-## What is mean total number of steps taken per day?
+## What is the mean total number of steps taken per day?
 
 ```{r}
 steps_by_day <- activity %>% 
-    filter(!is.na(steps)) %>% 
     group_by(date) %>% 
-    summarise(total=sum(steps))
+    summarise(total=sum(steps, na.rm=TRUE))
 with(steps_by_day, hist(total,breaks=23))
 ```
 
@@ -35,10 +34,54 @@ daily_avg
 
 ## What is the average daily activity pattern?
 
+```{r}
+steps_by_interval <- activity %>%
+    group_by(interval) %>%
+    summarise(avg=mean(steps, na.rm=TRUE))
+plot(steps_by_interval, type="l")
+```
+
+```{r}
+steps_by_interval %>% filter(avg == max(avg))
+```
 
 
 ## Imputing missing values
 
+```{r}
+activity %>% tally(is.na(steps))
+```
+
+```{r}
+imputed <- activity %>% 
+    group_by(interval) %>% 
+    mutate(steps=replace(steps, is.na(steps), round(mean(steps, na.rm=TRUE))))
+```
+
+```{r}
+steps_by_day <- imputed %>% 
+    group_by(date) %>% 
+    summarise(total=sum(steps, na.rm=TRUE))
+with(steps_by_day, hist(total,breaks=23))
+```
+
+```{r}
+daily_avg <- steps_by_day %>% 
+    summarise(mean=mean(total), median=median(total))
+daily_avg
+```
+
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r}
+library(lattice)
+steps_by_interval_day <- imputed %>%
+    mutate(day=as.factor(ifelse(wday(date) %in% c(1,7), 
+                                "weekend", "weekday"))) %>%
+    group_by(day, interval) %>%
+    summarize(avg=mean(steps))
+xyplot(avg ~ interval | day, data=steps_by_interval_day, layout=c(1,2), type="l")
+```
+
